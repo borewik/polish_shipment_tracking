@@ -19,6 +19,7 @@ CONF_SESSION_ID = "session_id"
 CONF_SESSION_REGISTERED = "session_registered"
 CONF_COOKIE = "cookie"
 CONF_LOGIN = "login"
+CONF_CALLBACK_URL = "callback_url"
 
 # Options: recipient filters (one pattern per line or comma separated).
 CONF_INCLUDE_RECIPIENTS = "include_recipients"

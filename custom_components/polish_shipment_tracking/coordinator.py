@@ -33,6 +33,7 @@ from .const import (
     SIGNAL_PARCELS_UPDATED,
     SIGNAL_ALLEGRO_ORDERS_UPDATED,
 )
+from .api_inpost import InPostAuthError
 from .helpers import get_parcel_detail_id, get_parcel_id
 from .helpers import (
     get_parcel_tracking_numbers,
@@ -150,6 +151,10 @@ class ShipmentCoordinator(DataUpdateCoordinator):
             api = InPostApi(self.session, device_uid=device_uid)
             api._token = token
             api._refresh_token = refresh_token
+            # Entries from before the OAuth login have no expiry: the first
+            # request refreshes, InPost rejects the old token and HA asks to
+            # sign in again.
+            api._expires_at = data.get(CONF_TOKEN_EXPIRES_AT, 0) or 0
             return api
             
         elif self.courier == "dpd":
@@ -222,6 +227,12 @@ class ShipmentCoordinator(DataUpdateCoordinator):
             self.pending_lifecycle_events = events
             self._missing_parcel_counts = missing_counts
             return self._filter_active_parcels(parcels) + retained
+        except InPostAuthError as err:
+            # The refresh token was rejected: HA shows a repair notification
+            # and a reauth flow with a new sign-in link.
+            raise ConfigEntryAuthFailed(
+                "InPost session expired, sign in again"
+            ) from err
         except Exception as err:
             if self.courier == "allegro" and any(code in str(err) for code in ("401", "403")):
                 # The pasted session cookie expired: let HA ask for a new one
@@ -236,6 +247,8 @@ class ShipmentCoordinator(DataUpdateCoordinator):
         """Fetch parcels and retry once if unauthorized."""
         try:
             return await self._fetch_parcels()
+        except InPostAuthError:
+            raise
         except Exception as e:
             if "401" in str(e) or "unauthorized" in str(e).lower():
                 _LOGGER.info("%s token expired, refreshing...", self.courier)
@@ -247,6 +260,8 @@ class ShipmentCoordinator(DataUpdateCoordinator):
         """Fetch one parcel and retry once if unauthorized."""
         try:
             return await self._fetch_single_parcel(tracking_number)
+        except InPostAuthError:
+            raise
         except Exception as e:
             if "401" in str(e) or "unauthorized" in str(e).lower():
                 _LOGGER.info("%s token expired while fetching single parcel, refreshing...", self.courier)
@@ -605,6 +620,7 @@ class ShipmentCoordinator(DataUpdateCoordinator):
                 **self.entry.data,
                 CONF_TOKEN: self.api._token,
                 CONF_REFRESH_TOKEN: self.api._refresh_token,
+                CONF_TOKEN_EXPIRES_AT: self.api._expires_at,
             }
         elif self.courier == "dpd":
             await self.api.refresh_access_token()
@@ -662,7 +678,7 @@ class ShipmentCoordinator(DataUpdateCoordinator):
                 CONF_TOKEN_EXPIRES_AT: self.api._expires_at,
                 CONF_REFRESH_EXPIRES_AT: self.api._refresh_expires_at,
             }
-        elif self.courier == "dpd":
+        elif self.courier in ("dpd", "inpost"):
             new_data = {
                 **self.entry.data,
                 CONF_TOKEN: self.api._token,

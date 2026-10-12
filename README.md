@@ -69,6 +69,26 @@ Integracja dla Home Assistant do śledzenia przesyłek u popularnych przewoźnik
 
 Po pierwszym odświeżeniu powinny pojawić się encje `sensor` dla przesyłek.
 
+### InPost
+
+InPost loguje przez swoją stronę z captchą, więc logowanie odbywa się w Twojej
+przeglądarce:
+
+1. Kliknij link do logowania w oknie dodawania konta i zaloguj się numerem
+   telefonu albo adresem e-mail.
+2. Po zalogowaniu przeglądarka pokaże stronę z adresem zaczynającym się od
+   `account.inpost-group.com/callback?code=`. Skopiuj cały adres z paska adresu
+   i od razu wklej go w Home Assistant (kod wygasa po kilku minutach).
+3. Przy logowaniu przez e-mail otwórz link z wiadomości w tej samej
+   przeglądarce. Adres do skopiowania pojawi się w karcie, w której zacząłeś.
+4. Kilka kont InPost: strona InPostu pamięta zalogowane konto i nie ma prostego
+   wylogowania, więc każde konto loguj w oknie prywatnym (incognito).
+
+Gdy InPost przestanie przyjmować zapisaną sesję, Home Assistant pokaże prośbę o
+ponowne uwierzytelnienie z tym samym krokiem logowania. Encje paczek zostają
+bez zmian. Konta dodane dawnym logowaniem kodem SMS trzeba raz zalogować nową
+metodą, bo InPost wyłączył stare sesje.
+
 ### Allegro (eksperymentalne)
 
 Allegro nie ma publicznego API dla kupujących, więc integracja korzysta z sesji

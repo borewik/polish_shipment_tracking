@@ -69,6 +69,28 @@ Home Assistant integration for tracking shipments from popular carriers in Polan
 
 Sensor entities should appear after the first refresh.
 
+### InPost
+
+InPost signs in through its website, which has a captcha, so you sign in in
+your own browser:
+
+1. Open the sign-in link shown when adding the account and sign in with your
+   phone number or e-mail.
+2. When the sign-in finishes, the browser shows a page whose address starts
+   with `account.inpost-group.com/callback?code=`. Copy the whole address from
+   the address bar and paste it in Home Assistant right away (the code expires
+   after a few minutes).
+3. With e-mail sign-in, open the link from the e-mail in the same browser. The
+   address to copy appears in the tab where you started.
+4. More than one InPost account: the InPost page remembers the signed-in
+   account and has no simple way to sign out, so sign in each account in a
+   private (incognito) window.
+
+When InPost stops accepting the saved session, Home Assistant asks to
+re-authenticate with the same sign-in step. Parcel entities stay as they are.
+Accounts added with the earlier SMS-code login have to sign in once with the
+new method, because InPost turned off the old sessions.
+
 ### Allegro (experimental)
 
 Allegro has no public API for buyers, so the integration uses your browser
